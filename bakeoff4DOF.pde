@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.*;
 
 //these are variables you should probably leave alone
 int index = 0; //starts at zero-ith trial
@@ -16,10 +17,15 @@ final int screenPPI = 72; //what is the DPI of the screen you are using
 //you can test this by drawing a 72x72 pixel rectangle in code, and then confirming with a ruler it is 1x1 inch. 
 
 //These variables are for my example design. Your input code should modify/replace these!
-float logoX = 0;
-float logoY = 0;
+float logoX = width/2.0;
+float logoY = height/2.0;
 float logoZ = 50f;
 float logoRotation = 0;
+boolean holding = false;
+boolean rotating = false;
+boolean is_good = false;
+int mx = mouseX - width/2;
+int my = mouseY - height/2;
 
 private class Destination
 {
@@ -55,14 +61,25 @@ void setup() {
   Collections.shuffle(destinations); // randomize the order of the button; don't change this.
 }
 
+boolean closeD(float x, float y){
+ return dist(x, y, logoX, logoY)<inchToPix(.05f); 
+}
 
+boolean closeZ(float z){
+ return abs(z - logoZ)<inchToPix(.05f); 
+}
+
+boolean closeR(float rotation){
+ return calculateDifferenceBetweenAngles(rotation, logoRotation)<=5; 
+}
 
 void draw() {
 
   background(40); //background is dark grey
   fill(200);
   noStroke();
-
+  mx = mouseX - width/2;
+  my = mouseY - height/2;
   //shouldn't really modify this printout code unless there is a really good reason to
   if (userDone)
   {
@@ -83,8 +100,17 @@ void draw() {
     rotate(radians(d.rotation));
     noFill();
     strokeWeight(3f);
-    if (trialIndex==i)
-      stroke(255, 0, 0, 192); //set color to semi translucent
+    if (trialIndex==i){
+      if(closeD(d.x, d.y))
+        stroke(0, 255, 0, 255);
+      else
+        stroke(255, 0, 0, 255);
+      rect(0, 0, 50, 50);
+      if(closeR(d.rotation) && closeZ(d.z))
+        stroke(0, 255, 0, 192);
+      else
+        stroke(255, 0, 0, 192); //set color to semi translucent
+    }
     else
       stroke(128, 128, 128, 128); //set color to semi translucent
     rect(0, 0, d.z, d.z);
@@ -103,8 +129,24 @@ void draw() {
 
   //===========DRAW EXAMPLE CONTROLS=================
   fill(255);
-  scaffoldControlLogic(); //you are going to want to replace this!
+  goodlogic();
+  //scaffoldControlLogic(); //you are going to want to replace this!
   text("Trial " + (trialIndex+1) + " of " +trialCount, width/2, inchToPix(.8f));
+}
+
+void goodlogic(){
+  ellipse(logoX + width/2, logoY + height/2, 10, 10);
+  if(holding){
+    logoX = mx;
+    logoY = my;
+    
+  }
+  else if(rotating){
+    logoRotation = degrees((float)Math.atan2(my - logoY, mx - logoX)) + 45.0;
+    logoZ = dist(mx, my, logoX, logoY);
+  }
+  // always check because why not
+  //is_good = checkForSuccess();
 }
 
 //my example design for control, which is terrible
@@ -156,13 +198,28 @@ void mousePressed()
     startTime = millis();
     println("time started!");
   }
+  float hold_range = logoZ/3.0;
+  if(mx > logoX - hold_range && mx < logoX + hold_range && my > logoY - hold_range && my < logoY + hold_range){
+    holding = true;
+  }
+  else{
+    holding = false;
+    hold_range *= 2;
+    if(mx > logoX - hold_range && mx < logoX + hold_range && my > logoY - hold_range && my < logoY + hold_range){
+      rotating = true;
+    }
+    else{
+      rotating = false;
+    }
+  }
+  
 }
 
 
 void mouseReleased()
 {
-  //check to see if user clicked middle of screen within 3 inches, which this code uses as a submit button
-  if (dist(width/2, height/2, mouseX, mouseY)<inchToPix(3f))
+  //check to see if user clicked with the right mouse button
+  if (mouseButton==RIGHT)
   {
     if (userDone==false && !checkForSuccess())
       errorCount++;
@@ -175,15 +232,17 @@ void mouseReleased()
       finishTime = millis();
     }
   }
+  holding = false;
+  rotating = false;
 }
 
 //probably shouldn't modify this, but email me if you want to for some good reason.
 public boolean checkForSuccess()
 {
-  Destination d = destinations.get(trialIndex);	
+  Destination d = destinations.get(trialIndex);  
   boolean closeDist = dist(d.x, d.y, logoX, logoY)<inchToPix(.05f); //has to be within +-0.05"
   boolean closeRotation = calculateDifferenceBetweenAngles(d.rotation, logoRotation)<=5;
-  boolean closeZ = abs(d.z - logoZ)<inchToPix(.05f); //has to be within +-0.05"	
+  boolean closeZ = abs(d.z - logoZ)<inchToPix(.05f); //has to be within +-0.05"  
 
   println("Close Enough Distance: " + closeDist + " (logo X/Y = " + d.x + "/" + d.y + ", destination X/Y = " + logoX + "/" + logoY +")");
   println("Close Enough Rotation: " + closeRotation + " (rot dist="+calculateDifferenceBetweenAngles(d.rotation, logoRotation)+")");
