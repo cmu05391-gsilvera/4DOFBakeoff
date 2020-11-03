@@ -21,12 +21,18 @@ float logoX = width/2.0;
 float logoY = height/2.0;
 float logoZ = 50f;
 float logoRotation = 0;
-boolean holding = false;
-boolean rotating = false;
+boolean top_right = false;
+boolean bottom_left = false;
 boolean is_good = false;
 int mx = mouseX - width/2;
 int my = mouseY - height/2;
-
+// anchors
+// top right anchor
+float anchorTRX = logoZ/2.0 + logoX;
+float anchorTRY = -logoZ/2.0 + logoY;
+// bottom left anchor
+float anchorBLX = -logoZ/2.0 + logoX;
+float anchorBLY = logoZ/2.0 + logoY;
 private class Destination
 {
   float x = 0;
@@ -101,12 +107,12 @@ void draw() {
     noFill();
     strokeWeight(3f);
     if (trialIndex==i){
-      if(closeD(d.x, d.y))
-        stroke(0, 255, 0, 255);
-      else
-        stroke(255, 0, 0, 255);
-      rect(0, 0, 50, 50);
-      if(closeR(d.rotation) && closeZ(d.z))
+      //if(closeD(d.x, d.y))
+      //  stroke(0, 255, 0, 255);
+      //else
+      //  stroke(255, 0, 0, 255);
+      //rect(0, 0, 50, 50);
+      if(closeD(d.x, d.y) && closeR(d.rotation) && closeZ(d.z))
         stroke(0, 255, 0, 192);
       else
         stroke(255, 0, 0, 192); //set color to semi translucent
@@ -125,6 +131,17 @@ void draw() {
   noStroke();
   fill(60, 60, 192, 192);
   rect(0, 0, logoZ, logoZ);
+  // draw corner buttons
+  if(top_right)
+    fill(0, 255, 0, 255);
+  else
+    fill(255, 255, 255, 192);
+  ellipse(logoZ/2.0, -logoZ/2.0, 10, 10);
+  if(bottom_left)
+    fill(0, 255, 0, 255);
+  else
+    fill(0, 0, 0, 192);
+  ellipse(-logoZ / 2.0, logoZ / 2.0, 10, 10);
   popMatrix();
 
   //===========DRAW EXAMPLE CONTROLS=================
@@ -135,59 +152,34 @@ void draw() {
 }
 
 void goodlogic(){
-  ellipse(logoX + width/2, logoY + height/2, 10, 10);
-  if(holding){
-    logoX = mx;
-    logoY = my;
-    
+  if(top_right){
+    float anchorX = anchorBLX;
+    float anchorY = anchorBLY;
+    float angle = (float)Math.atan2(my - anchorY, mx - anchorX);
+    logoRotation = degrees(angle) + 45;
+    logoZ = dist(mx, my, anchorX, anchorY) / ((float)Math.sqrt(2));
+    logoX = 0.5*(float)Math.cos(angle) * dist(mx, my, anchorX, anchorY) + anchorX;
+    logoY = 0.5*(float)Math.sin(angle) * dist(mx, my, anchorX, anchorY) + anchorY; 
   }
-  else if(rotating){
-    logoRotation = degrees((float)Math.atan2(my - logoY, mx - logoX)) + 45.0;
-    logoZ = dist(mx, my, logoX, logoY);
+  else if(bottom_left){
+    float anchorX = anchorTRX;
+    float anchorY = anchorTRY;
+    float angle = (float)Math.atan2(my - anchorY, mx - anchorX);
+    logoRotation = degrees(angle) + 45+180;
+    logoZ = dist(mx, my, anchorX, anchorY) / ((float)Math.sqrt(2));
+    logoX = 0.5*(float)Math.cos(angle) * dist(mx, my, anchorX, anchorY) + anchorX;
+    logoY = 0.5*(float)Math.sin(angle) * dist(mx, my, anchorX, anchorY) + anchorY; 
   }
+  // debug stuffs
+  //System.out.println("Rot:" + logoRotation);
+  //System.out.println("X:" + logoX + " Y:" + logoY);
+  //System.out.println("Z:" + logoZ);
   // always check because why not
   //is_good = checkForSuccess();
 }
 
-//my example design for control, which is terrible
-void scaffoldControlLogic()
-{
-  //upper left corner, rotate counterclockwise
-  text("CCW", inchToPix(.4f), inchToPix(.4f));
-  if (mousePressed && dist(0, 0, mouseX, mouseY)<inchToPix(.8f))
-    logoRotation--;
-
-  //upper right corner, rotate clockwise
-  text("CW", width-inchToPix(.4f), inchToPix(.4f));
-  if (mousePressed && dist(width, 0, mouseX, mouseY)<inchToPix(.8f))
-    logoRotation++;
-
-  //lower left corner, decrease Z
-  text("-", inchToPix(.4f), height-inchToPix(.4f));
-  if (mousePressed && dist(0, height, mouseX, mouseY)<inchToPix(.8f))
-    logoZ = constrain(logoZ-inchToPix(.02f), .01, inchToPix(4f)); //leave min and max alone!
-
-  //lower right corner, increase Z
-  text("+", width-inchToPix(.4f), height-inchToPix(.4f));
-  if (mousePressed && dist(width, height, mouseX, mouseY)<inchToPix(.8f))
-    logoZ = constrain(logoZ+inchToPix(.02f), .01, inchToPix(4f)); //leave min and max alone! 
-
-  //left middle, move left
-  text("left", inchToPix(.4f), height/2);
-  if (mousePressed && dist(0, height/2, mouseX, mouseY)<inchToPix(.8f))
-    logoX-=inchToPix(.02f);
-
-  text("right", width-inchToPix(.4f), height/2);
-  if (mousePressed && dist(width, height/2, mouseX, mouseY)<inchToPix(.8f))
-    logoX+=inchToPix(.02f);
-
-  text("up", width/2, inchToPix(.4f));
-  if (mousePressed && dist(width/2, 0, mouseX, mouseY)<inchToPix(.8f))
-    logoY-=inchToPix(.02f);
-
-  text("down", width/2, height-inchToPix(.4f));
-  if (mousePressed && dist(width/2, height, mouseX, mouseY)<inchToPix(.8f))
-    logoY+=inchToPix(.02f);
+boolean within_range(float x, float y, float x2, float y2, float range){
+ return (x > x2 - range && x < x2 + range && y > y2 - range && y < y2 + range); 
 }
 
 
@@ -198,21 +190,31 @@ void mousePressed()
     startTime = millis();
     println("time started!");
   }
-  float hold_range = logoZ/3.0;
-  if(mx > logoX - hold_range && mx < logoX + hold_range && my > logoY - hold_range && my < logoY + hold_range){
-    holding = true;
-  }
-  else{
-    holding = false;
-    hold_range *= 2;
-    if(mx > logoX - hold_range && mx < logoX + hold_range && my > logoY - hold_range && my < logoY + hold_range){
-      rotating = true;
+  if(mouseButton==LEFT){
+    float hold_range = 0.2*logoZ;
+    // rotation translations to keep with everything else
+    float theta =  radians(logoRotation);
+    float TRX = ((float)Math.cos(theta) * (logoZ / 2.0) - (float)Math.sin(theta)*(-logoZ / 2.0) + logoX);
+    float TRY = ((float)Math.sin(theta) * (logoZ / 2.0) + (float)Math.cos(theta)*(-logoZ / 2.0) + logoY);
+    float BLX = ((float)Math.cos(theta) * (-logoZ / 2.0) - (float)Math.sin(theta)*(logoZ / 2.0) + logoX);
+    float BLY = ((float)Math.sin(theta) * (-logoZ / 2.0) + (float)Math.cos(theta)*(logoZ / 2.0) + logoY);
+    //ellipse(TRX, TRY, 10, 10);
+    if(within_range(mx, my, TRX, TRY, hold_range)){
+      top_right = true;
+      bottom_left = false;
     }
     else{
-      rotating = false;
+      top_right = false;
+      // bottom left
+      if(within_range(mx, my, BLX, BLY, hold_range)){
+        bottom_left = true;
+        top_right = false;
+      }
+      else{
+        bottom_left = false;
+      }
     }
   }
-  
 }
 
 
@@ -232,8 +234,16 @@ void mouseReleased()
       finishTime = millis();
     }
   }
-  holding = false;
-  rotating = false;
+  if(top_right){
+    anchorTRX=mx;
+    anchorTRY=my;
+  }
+  top_right = false;
+  if(bottom_left){
+    anchorBLX=mx;
+    anchorBLY=my;
+  }
+  bottom_left = false;
 }
 
 //probably shouldn't modify this, but email me if you want to for some good reason.
