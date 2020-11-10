@@ -107,11 +107,6 @@ void draw() {
     noFill();
     strokeWeight(3f);
     if (trialIndex==i){
-      //if(closeD(d.x, d.y))
-      //  stroke(0, 255, 0, 255);
-      //else
-      //  stroke(255, 0, 0, 255);
-      //rect(0, 0, 50, 50);
       if(closeD(d.x, d.y) && closeR(d.rotation) && closeZ(d.z))
         stroke(0, 255, 0, 192);
       else
@@ -132,15 +127,46 @@ void draw() {
   fill(60, 60, 192, 192);
   rect(0, 0, logoZ, logoZ);
   // draw corner buttons
-  if(top_right)
+  // first draw topright => rotation
+  // draw corner dot orange if grabbed, green if placeable, white elsewhere
+  if(top_right && corner_near()){
     fill(0, 255, 0, 255);
-  else
-    fill(255, 255, 255, 192);
+    stroke(0, 255, 0, 255);
+  }
+  else{
+    if(top_right || within_range(mx, my, anchorTRX, anchorTRY, logoZ*0.2)){
+      fill(255, 69, 0, 255);
+      stroke(255, 69, 0, 255);
+    }
+    else{ // basic white
+      fill(255, 255, 255, 192);
+      stroke(255);
+    }
+  }
   ellipse(logoZ/2.0, -logoZ/2.0, 10, 10);
-  if(bottom_left)
+  noFill();
+  ellipse(logoZ/2.0, -logoZ/2.0, logoZ/4.0, logoZ/4.0);
+  noStroke();
+  // draw bottom left (x/y) corner
+  // draw corner dot orange if grabbed, green if placeable, white elsewhere
+  if(bottom_left && corner_near()){
     fill(0, 255, 0, 255);
-  else
-    fill(0, 0, 0, 192);
+    stroke(0, 255, 0, 255);
+  }
+  else{
+    if(bottom_left || within_range(mx, my, anchorBLX, anchorBLY, logoZ*0.2)){
+      fill(255, 69, 0, 255);
+      stroke(255, 69, 0, 255);
+    }
+    else{
+      fill(255, 255, 255, 192);
+      stroke(255);
+    }
+  }
+  float l = logoZ/8.0;
+  line(-logoZ / 2.0 - l, logoZ / 2.0 - l, -logoZ / 2.0 + l, logoZ / 2.0 + l);
+  line(-logoZ / 2.0 + l, logoZ / 2.0 - l, -logoZ / 2.0 - l, logoZ / 2.0 + l);
+  noStroke();
   ellipse(-logoZ / 2.0, logoZ / 2.0, 10, 10);
   popMatrix();
 
@@ -162,25 +188,49 @@ void goodlogic(){
     logoY = 0.5*(float)Math.sin(angle) * dist(mx, my, anchorX, anchorY) + anchorY; 
   }
   else if(bottom_left){
-    float anchorX = anchorTRX;
-    float anchorY = anchorTRY;
-    //float angle = (float)Math.atan2(my - anchorY, mx - anchorX);
-    //logoRotation = degrees(angle) + 45+180;
-    //logoZ = dist(mx, my, anchorX, anchorY) / ((float)Math.sqrt(2));
-    //logoX = 0.5*(float)Math.cos(angle) * dist(mx, my, anchorX, anchorY) + anchorX;
-    //logoY = 0.5*(float)Math.sin(angle) * dist(mx, my, anchorX, anchorY) + anchorY;
+    // used for X/Y translation only, not angle stuff
     float theta = radians(logoRotation);
     logoX = mx + ((float)Math.cos(theta) * (logoZ / 2.0) - (float)Math.sin(theta)*(-logoZ / 2.0));
     logoY = my + ((float)Math.sin(theta) * (logoZ / 2.0) + (float)Math.cos(theta)*(-logoZ / 2.0));
     
   }
-  
   // debug stuffs
   //System.out.println("Rot:" + logoRotation);
   //System.out.println("X:" + logoX + " Y:" + logoY);
   //System.out.println("Z:" + logoZ);
   // always check because why not
   //is_good = checkForSuccess();
+}
+
+boolean corner_near(){
+  // calculate corners from the center of the squares
+  int thresh = 3;// pixels radius
+  Destination d = destinations.get(trialIndex);
+  float rot = d.rotation;
+  float Z= d.z;
+  float X = d.x;
+  float Y = d.y;
+  
+  float theta =  radians(rot);
+  
+  float TRX = ((float)Math.cos(theta) * (Z / 2.0) - (float)Math.sin(theta)*(-Z / 2.0)) + X;
+  float TRY = ((float)Math.sin(theta) * (Z / 2.0) + (float)Math.cos(theta)*(-Z / 2.0)) + Y;
+  
+  float BLX = ((float)Math.cos(theta) * (-Z / 2.0) - (float)Math.sin(theta)*(Z / 2.0)) + X;
+  float BLY = ((float)Math.sin(theta) * (-Z / 2.0) + (float)Math.cos(theta)*(Z / 2.0)) + Y;
+  
+  float TLX = ((float)Math.cos(theta) * (Z / 2.0) - (float)Math.sin(theta)*(Z / 2.0)) + X;
+  float TLY = ((float)Math.sin(theta) * (Z / 2.0) - (float)Math.cos(theta)*(-Z / 2.0)) + Y;
+  
+  float BRX = ((float)Math.cos(theta) * (-Z / 2.0) + (float)Math.sin(theta)*(Z / 2.0)) + X;
+  float BRY = ((float)Math.sin(theta) * (-Z / 2.0) + (float)Math.cos(theta)*(-Z / 2.0)) + Y;
+  return within_range(mx, my, TRX, TRY, thresh) || within_range(mx, my, BLX, BLY, thresh) || within_range(mx, my, TLX, TLY, thresh) || within_range(mx, my, BRX, BRY, thresh);
+  //if(cX < 0 && cY > 0){// bottom left
+  //  return within_range(cX, cY, TRX, TRY, thresh);
+  //}
+  //else{
+  //  return within_range(cX, cY, BLX, BLY, thresh);
+  //} 
 }
 
 boolean within_range(float x, float y, float x2, float y2, float range){
@@ -239,6 +289,12 @@ void mouseReleased()
       finishTime = millis();
     }
   }
+  float theta =  radians(logoRotation);
+  float TRX = ((float)Math.cos(theta) * (logoZ / 2.0) - (float)Math.sin(theta)*(-logoZ / 2.0) + logoX);
+  float TRY = ((float)Math.sin(theta) * (logoZ / 2.0) + (float)Math.cos(theta)*(-logoZ / 2.0) + logoY);
+  // update the anchor right to be TRX and TRY because they will be used later
+  anchorTRX = TRX;
+  anchorTRY = TRY;
   if(top_right){
     anchorTRX=mx;
     anchorTRY=my;
