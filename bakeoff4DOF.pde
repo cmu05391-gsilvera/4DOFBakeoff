@@ -177,13 +177,13 @@ void drawIndicatorCorners(){
     fill(0, 255, 0, 255); 
   else
     fill(0, 0, 0, 255);
-  ellipse(-Z/2.0, -Z/2.0, 10, 10); 
+  ellipse(Z/2.0, Z/2.0, 10, 10); 
   // bottom right
   if(within_range(mx, my, BRX, BRY, thresh))
     fill(0, 255, 0, 255); 
   else
     fill(0, 0, 0, 255);
-  ellipse(Z/2.0, Z/2.0, 10, 10); 
+  ellipse(-Z/2.0, -Z/2.0, 10, 10); 
   // bottom left
   if(within_range(mx, my, BLX, BLY, thresh))
     fill(0, 255, 0, 255); 
