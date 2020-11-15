@@ -116,12 +116,7 @@ void draw() {
     noFill();
     strokeWeight(3f);
     if (trialIndex==i){
-      if(closeD(d.x, d.y))
-        stroke(0, 255, 0, 255);
-      else
-        stroke(255, 0, 0, 255);
-      rect(0, 0, 50, 50);
-      if(closeR(d.rotation) && closeZ(d.z))
+      if(closeR(d.rotation) && closeZ(d.z) && closeD(d.x, d.y))
         stroke(0, 255, 0, 192);
       else
         stroke(255, 0, 0, 192); //set color to semi translucent
@@ -133,7 +128,7 @@ void draw() {
   }
 
   //===========DRAW LOGO SQUARE=================
-  
+  drawIndicatorCorners();
   drawIndicator();
 
   //===========DRAW EXAMPLE CONTROLS=================
@@ -141,6 +136,61 @@ void draw() {
   //goodlogic();
   //scaffoldControlLogic(); //you are going to want to replace this!
   text("Trial " + (trialIndex+1) + " of " +trialCount, width/2, inchToPix(.8f));
+}
+boolean within_range(float x, float y, float x2, float y2, float range){
+  return (x > x2 - range && x < x2 + range && y > y2 - range && y < y2 + range); 
+}
+void drawIndicatorCorners(){
+  // calculate corners from the center of the squares
+  int thresh = 3;// pixels radius
+  Destination d = destinations.get(trialIndex);
+  float rot = d.rotation;
+  float Z= d.z;
+  float X = d.x;
+  float Y = d.y;
+  
+  float theta =  radians(rot);
+  float TRX = ((float)Math.cos(theta) * (Z / 2.0) - (float)Math.sin(theta)*(-Z / 2.0)) + X;
+  float TRY = ((float)Math.sin(theta) * (Z / 2.0) + (float)Math.cos(theta)*(-Z / 2.0)) + Y;
+  
+  float BLX = ((float)Math.cos(theta) * (-Z / 2.0) - (float)Math.sin(theta)*(Z / 2.0)) + X;
+  float BLY = ((float)Math.sin(theta) * (-Z / 2.0) + (float)Math.cos(theta)*(Z / 2.0)) + Y;
+  
+  float TLX = ((float)Math.cos(theta) * (Z / 2.0) - (float)Math.sin(theta)*(Z / 2.0)) + X;
+  float TLY = ((float)Math.sin(theta) * (Z / 2.0) - (float)Math.cos(theta)*(-Z / 2.0)) + Y;
+  
+  float BRX = ((float)Math.cos(theta) * (-Z / 2.0) + (float)Math.sin(theta)*(Z / 2.0)) + X;
+  float BRY = ((float)Math.sin(theta) * (-Z / 2.0) + (float)Math.cos(theta)*(-Z / 2.0)) + Y;
+  pushMatrix();
+  translate(width/2, height/2); //center the drawing coordinates to the center of the screen
+  translate(X, Y);
+  rotate(theta);
+  noStroke();
+  // top right
+  if(within_range(mx, my, TRX, TRY, thresh))
+    fill(0, 255, 0, 255); 
+  else
+    fill(0, 0, 0, 255);
+  ellipse(Z/2.0, -Z/2.0, 10, 10);
+  // top left
+  if(within_range(mx, my, TLX, TLY, thresh))
+    fill(0, 255, 0, 255); 
+  else
+    fill(0, 0, 0, 255);
+  ellipse(-Z/2.0, -Z/2.0, 10, 10); 
+  // bottom right
+  if(within_range(mx, my, BRX, BRY, thresh))
+    fill(0, 255, 0, 255); 
+  else
+    fill(0, 0, 0, 255);
+  ellipse(Z/2.0, Z/2.0, 10, 10); 
+  // bottom left
+  if(within_range(mx, my, BLX, BLY, thresh))
+    fill(0, 255, 0, 255); 
+  else
+    fill(0, 0, 0, 255);
+  ellipse(-Z/2.0, Z/2.0, 10, 10); 
+  popMatrix();
 }
 
 void gooderLogic() {
