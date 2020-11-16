@@ -129,7 +129,7 @@ void draw() {
     noFill();
     strokeWeight(3f);
     if (trialIndex==i){
-      if(closeR(d.rotation) && closeZ(d.z) && closeD(d.x, d.y))
+      if(closeR(d.rotation) && closeZ(d.z) && closeD(d.x, d.y) && clickIndex == 3)
         stroke(0, 255, 0, 192);
       else
         stroke(255, 0, 0, 192); //set color to semi translucent
@@ -231,7 +231,7 @@ void gooderLogic() {
       // Which side of the line are we on?
       float d = (mx - v1X)*(v2Y - v1Y) - (my - v1Y)*(v2X - v1X);
       float dLeft = (mx - v1X - 1)*(v2Y - v1Y) - (my - v1Y)*(v2X - v1X);
-      println("d = ", d, "dLeft = ", dLeft);
+      //println("d = ", d, "dLeft = ", dLeft);
       if (d > 0) {
         // We are on the left side of the line
         if (dLeft > 0) {
@@ -357,36 +357,36 @@ void drawIndicator() {
       lineToSquareFrames += 1; lineToSquareFrames = min(lineToSquareFrames, lineToSquareMaxFrames);
       
       float drawFactor = (lineToSquareFrames/lineToSquareMaxFrames);
-      println("drawFactor = ", drawFactor);
+      //println("drawFactor = ", drawFactor);
       dPrev = d;
       float dLeft = (mx - v1X - 1)*(v2Y - v1Y) - (my - v1Y)*(v2X - v1X);
       
       // Set the draw factor - how much of the square we draw
       //float drawFactor = (lineToSquareFrames/lineToSquareMaxFrames);
       if (d > 0) {
-        println("deez > 0");
+        //println("deez > 0");
         // We are on the left side of the line
         if (dLeft > 0) {
-          println("we on that left side");
+          //println("we on that left side");
           v3X = v2X - dy*drawFactor;
           v3Y = v2Y + dx*drawFactor;
         // We are on the right side of the line
         } else {
-          println("we on that right side");
+          //println("we on that right side");
           v3X = v2X + dy*drawFactor;
           v3Y = v2Y - dx*drawFactor;
         }
         
       } else {
-        println("deez <= 0");
+        //println("deez <= 0");
         // We are on the left side of the line
         if (dLeft < 0) {
-          println("we on that right side");
+          //println("we on that right side");
           v3X = v2X + dy*drawFactor;
           v3Y = v2Y - dx*drawFactor;
         // We are on the right side of the line
         } else {
-          println("we on that left side");
+          //println("we on that left side");
           v3X = v2X + dy*drawFactor;
           v3Y = v2Y - dx*drawFactor;
         }
@@ -592,9 +592,9 @@ boolean containsWrapper(float[][] shape, float px, float py) {
   Point polygon[] = new Point[4];
   for (int i = 0; i < 4; i++) {
     Point curr = new Point((int)shape[i][0], (int)shape[i][1]);
-    println("i = ", i, "; (", shape[i][0], " ", shape[i][1], ")");
+    //println("i = ", i, "; (", shape[i][0], " ", shape[i][1], ")");
     polygon[i] = curr;
   }
-  println("px = ", px, "; py = ", py);
+  //println("px = ", px, "; py = ", py);
   return contains(polygon, p);
 }
