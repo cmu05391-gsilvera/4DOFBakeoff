@@ -30,15 +30,23 @@ float topY = height/2.0;
 float botX = topX + logoZ;
 float botY = topY + logoZ;
  
-
+// Two corners stuff
 boolean holding = false;
 boolean rotating = false;
 boolean is_good = false;
+
+// Alt mouse to account for translations
 int mx = mouseX - width/2;
 int my = mouseY - height/2;
 
+// Animation vars
+float dPrev = 0;
+float lineToSquareFrames = 0;
+float lineToSquareMaxFrames = 15;
+
+// Storing clicks
 int clickIndex = 0;
-float[][] clicks = new float[4][4];
+float[][] points = new float[4][4];
 int maxClick = 3;
 boolean finalClick = false;
 
@@ -194,22 +202,22 @@ void drawIndicatorCorners(){
 }
 
 void gooderLogic() {
+  
+  // If we're drawing points/lines
   if (clickIndex < 2) {
-    print("adding click at index: ");
-    println(clickIndex);
     float[] newClick = new float[2];
     newClick[0] = mx;
     newClick[1] = my;
-    clicks[clickIndex] = newClick;
+    points[clickIndex] = newClick;
+    // Advance
     clickIndex++;
-    if (clickIndex == maxClick) {
-      newLogoPosFromClicks();
-    }
+    
+  // If we're dynamically drawing the square
   } else if (clickIndex == 2) {
-    float v1X = clicks[0][0];
-    float v1Y = clicks[0][1];
-    float v2X = clicks[1][0];
-    float v2Y = clicks[1][1];
+    float v1X = points[0][0];
+    float v1Y = points[0][1];
+    float v2X = points[1][0];
+    float v2Y = points[1][1];
     
     float dx = v1X - v2X;
     float dy = v1Y - v2Y;
@@ -253,13 +261,26 @@ void gooderLogic() {
     float v4X = v3X + dx;
     float v4Y = v3Y + dy;
     
-    clicks[2][0] = v3X; clicks[2][1] = v3Y;
-    clicks[3][0] = v4X; clicks[3][1] = v4Y;
+    points[2][0] = v3X; points[2][1] = v3Y;
+    points[3][0] = v4X; points[3][1] = v4Y;
     
+    // Convert to point/length/rotation format
     setDetectionInfo();
     
-    finalClick = true;
+    // Advance
+    clickIndex++;
+    
+  // If we need to accept/reject the square
+  
+  } else if (clickIndex == 3) {
+    // Reset the square
     clickIndex = 0;
+    // If we clicked inside the square then advance
+    if (containsWrapper(points, mouseX - width/2, mouseY - height/2)) {
+      finalClick = true;
+    }
+    
+    
   }
   
 }
@@ -267,68 +288,87 @@ void gooderLogic() {
 void drawIndicator() {
   
   switch (clickIndex) {
+    // After one click draw a line from the first point to mx/my
     case 1: {
-      // Draw the point that we clicked
+      // Get the point that we clicked
       int i = 0;
-      float clickX = clicks[i][0];
-      float clickY = clicks[i][1];
-      fill(255,0,255);
-      ellipse(clickX + width/2, clickY+height/2, 10, 10);
-      // Draw a line from the point to the cursor
+      float clickX = points[i][0];
+      float clickY = points[i][1];
+      //fill(255,0,255);
+      //ellipse(clickX + width/2, clickY+height/2, 10, 10);
+      // Draw a line from the point we clicked to the cursor
       strokeWeight(3);
       stroke(0,50,230);
       line(clickX+width/2,clickY+height/2, mouseX,mouseY);
+      // Reset lineToSquare animation
+      lineToSquareFrames = 0;
       break;
     }
+    // If we've clicked twice draw a moving square
     case 2: {
+      float v1X = points[0][0];
+      float v1Y = points[0][1];
+      float v2X = points[1][0];
+      float v2Y = points[1][1];
+      float dx = v1X - v2X;
+      float dy = v1Y - v2Y;
+      float v3X; float v3Y;
+        
+      // Decide which side of the line we are on
+      float d = (mx - v1X)*(v2Y - v1Y) - (my - v1Y)*(v2X - v1X);
+      
+      // If we just switched sides reset the animation
+      if ((dPrev > 0 && d <= 0) || (dPrev <= 0 && d > 0)) {
+        lineToSquareFrames = 0;
+      }
+      
+      // Incremement but constrain the drawFactor
+      lineToSquareFrames += 1; lineToSquareFrames = min(lineToSquareFrames, lineToSquareMaxFrames);
+      
+      float drawFactor = (lineToSquareFrames/lineToSquareMaxFrames);
+      println("drawFactor = ", drawFactor);
+      dPrev = d;
+      float dLeft = (mx - v1X - 1)*(v2Y - v1Y) - (my - v1Y)*(v2X - v1X);
+      
+      // Set the draw factor - how much of the square we draw
+      //float drawFactor = (lineToSquareFrames/lineToSquareMaxFrames);
+      if (d > 0) {
+        println("deez > 0");
+        // We are on the left side of the line
+        if (dLeft > 0) {
+          println("we on that left side");
+          v3X = v2X - dy*drawFactor;
+          v3Y = v2Y + dx*drawFactor;
+        // We are on the right side of the line
+        } else {
+          println("we on that right side");
+          v3X = v2X + dy*drawFactor;
+          v3Y = v2Y - dx*drawFactor;
+        }
+        
+      } else {
+        println("deez <= 0");
+        // We are on the left side of the line
+        if (dLeft < 0) {
+          println("we on that right side");
+          v3X = v2X + dy*drawFactor;
+          v3Y = v2Y - dx*drawFactor;
+        // We are on the right side of the line
+        } else {
+          println("we on that left side");
+          v3X = v2X + dy*drawFactor;
+          v3Y = v2Y - dx*drawFactor;
+        }
+      }
+      
+      // Set V4 based on V3
+      float v4X = v3X + dx;
+      float v4Y = v3Y + dy;
+      
+      // Draw Shape
       fill(0,0,255);
       strokeWeight(0);
       beginShape();
-      float v1X = clicks[0][0];
-      float v1Y = clicks[0][1];
-      float v2X = clicks[1][0];
-      float v2Y = clicks[1][1];
-      float dx = v1X - v2X;
-      float dy = v1Y - v2Y;
-      println("dy = ", dy, "dx = ", dx);
-      Optional<Float> slope = getSlope(v1X,v2X,v1Y,v2Y);
-      float v3X; float v3Y;
-      // Defined slope
-      if (slope.isPresent()) {
-        // Which side of the line are we on?
-        float d = (mx - v1X)*(v2Y - v1Y) - (my - v1Y)*(v2X - v1X);
-        float dLeft = (mx - v1X - 1)*(v2Y - v1Y) - (my - v1Y)*(v2X - v1X);
-        println("d = ", d, "dLeft = ", dLeft);
-        if (d > 0) {
-          // We are on the left side of the line
-          if (dLeft > 0) {
-            v3X = v2X - dy;
-            v3Y = v2Y + dx;
-          // We are on the right side of the line
-          } else {
-            v3X = v2X + dy;
-            v3Y = v2Y - dx;
-          }
-          
-        } else {
-          // We are on the left side of the line
-          if (dLeft < 0) {
-            v3X = v2X + dy;
-            v3Y = v2Y - dx;
-          // We are on the right side of the line
-          } else {
-            v3X = v2X + dy;
-            v3Y = v2Y - dx;
-          }
-        }
-      // Undefined slope
-      } else {
-        v3Y = v2Y;
-        if (mx > v2X) v3X = v2X - dy;
-        else v3X = v2X + dy;
-      }
-      float v4X = v3X + dx;
-      float v4Y = v3Y + dy;
       vertex(v1X+width/2,v1Y+height/2);
       vertex(v2X+width/2,v2Y+height/2);
       vertex(v3X+width/2,v3Y+height/2);
@@ -336,24 +376,10 @@ void drawIndicator() {
       endShape(CLOSE);
       break;
     }
-    // If we haven't clicked yet, just show the old logo
-    default: {
-      fill(0,0,255,50);
+    // If we've placed the square but still need to confirm TODO (this is dead code)
+    case 3: {
+      fill(0,0,255);
       strokeWeight(0);
-      //beginShape();
-      //float v1X = clicks[0][0];
-      //float v1Y = clicks[0][1];
-      //float v2X = clicks[1][0];
-      //float v2Y = clicks[1][1];
-      //float v3X = clicks[2][0];
-      //float v3Y = clicks[2][1];
-      //float v4X = clicks[3][0];
-      //float v4Y = clicks[3][1];
-      //vertex(v1X,v1Y);
-      //vertex(v2X,v2Y);
-      //vertex(v3X,v3Y);
-      //vertex(v4X,v4Y);
-      //endShape(CLOSE);
       pushMatrix();
       translate(width/2, height/2); //center the drawing coordinates to the center of the screen
       translate(logoX, logoY);
@@ -361,6 +387,22 @@ void drawIndicator() {
       noStroke();
       rect(0, 0, logoZ, logoZ);
       popMatrix();
+      break;
+    }
+    
+    // If we haven't clicked yet, collapse the old logo 
+    default: {
+      fill(0,0,255,50);
+      strokeWeight(0);
+      pushMatrix();
+      translate(width/2, height/2); //center the drawing coordinates to the center of the screen
+      translate(logoX, logoY);
+      rotate(radians(logoRotation));
+      noStroke();
+      rect(0, 0, logoZ, logoZ);
+      popMatrix();
+      //boolean inside = containsWrapper(points, mouseX - width/2, mouseY - height/2);
+      //println("inside = ", inside);
       break;
     }
 
@@ -375,7 +417,7 @@ void mousePressed()
     startTime = millis();
     println("time started!");
   }
-  
+  println("clickIndex = ", clickIndex);
   gooderLogic();
   
 }
@@ -383,13 +425,8 @@ void mousePressed()
 
 void mouseReleased()
 { 
-  //check to see if user clicked with the right mouse button (cancel)
-  if (mouseButton==RIGHT)
-  {
-    clickIndex = 0;
-  }
-  //check to see if user clicked with the right mouse button (cancel)
-  if (finalClick && mouseButton==LEFT)
+  //check to see if the trial was advanced
+  if (finalClick)
   {
     if (userDone==false && !checkForSuccess())
       errorCount++;
@@ -407,12 +444,12 @@ void mouseReleased()
 }
 
 void setDetectionInfo() {
-  float v1X = clicks[0][0];
-  float v1Y = clicks[0][1];
-  float v2X = clicks[1][0];
-  float v2Y = clicks[1][1];
-  float v3X = clicks[2][0];
-  float v3Y = clicks[2][1];
+  float v1X = points[0][0];
+  float v1Y = points[0][1];
+  float v2X = points[1][0];
+  float v2Y = points[1][1];
+  float v3X = points[2][0];
+  float v3Y = points[2][1];
   
   float dx = v1X - v2X;
   float dy = v1Y - v2Y;
@@ -459,13 +496,6 @@ float getYIntercept(float slope, float x, float y) {
   return (y - (slope*x));
 }
 
-void newLogoPosFromClicks() {
-  float[] click0 = clicks[0];
-  topX = click0[0]; topY = click0[1];
-  click0 = clicks[1];
-  botX = click0[0]; botY = click0[1];
-}
-
 //probably shouldn't modify this, but email me if you want to for some good reason.
 public boolean checkForSuccess()
 {
@@ -497,4 +527,45 @@ double calculateDifferenceBetweenAngles(float a1, float a2)
 float inchToPix(float inch)
 {
   return inch*screenPPI;
+}
+
+// Bounds checking for rect accept/reject
+
+// Taken from stack overflow https://stackoverflow.com/questions/8721406/how-to-determine-if-a-point-is-inside-a-2d-convex-polygon
+
+class Point  
+{ 
+    int x; 
+    int y; 
+
+    public Point(int x, int y) 
+    { 
+        this.x = x; 
+        this.y = y; 
+    } 
+}; 
+
+boolean contains(Point polygon[], Point test) {
+  int i;
+  int j;
+  boolean result = false;
+  for (i = 0, j = points.length - 1; i < points.length; j = i++) {
+    if ((polygon[i].y > test.y) != (polygon[j].y > test.y) &&
+        (test.x < (polygon[j].x - polygon[i].x) * (test.y - polygon[i].y) / (polygon[j].y-polygon[i].y) + polygon[i].x)) {
+      result = !result;
+     }
+  }
+  return result;
+}
+
+boolean containsWrapper(float[][] shape, float px, float py) {
+  Point p = new Point((int)px,(int)py);
+  Point polygon[] = new Point[4];
+  for (int i = 0; i < 4; i++) {
+    Point curr = new Point((int)shape[i][0], (int)shape[i][1]);
+    println("i = ", i, "; (", shape[i][0], " ", shape[i][1], ")");
+    polygon[i] = curr;
+  }
+  println("px = ", px, "; py = ", py);
+  return contains(polygon, p);
 }
