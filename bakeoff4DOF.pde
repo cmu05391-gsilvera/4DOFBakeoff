@@ -23,7 +23,6 @@ float logoY = height/2.0;
 float logoZ = 50f;
 float logoRotation = 0;
 
-
 // Alt positioning
 float topX = width/2.0;
 float topY = height/2.0;
@@ -43,6 +42,8 @@ int my = mouseY - height/2;
 float dPrev = 0;
 float lineToSquareFrames = 0;
 float lineToSquareMaxFrames = 15;
+float collapseSquareFrames = 0;
+float collapseSquareMaxFrames = 15;
 
 // Storing clicks
 int clickIndex = 0;
@@ -112,8 +113,12 @@ void draw() {
     text("User took " + ((finishTime-startTime)/1000f/trialCount+(errorCount*errorPenalty)) + " sec per destination inc. penalty", width/2, inchToPix(.4f)*4);
     return;
   }
+  
+  //===========DRAW LOGO SQUARE=================
+  drawIndicator();
 
   //===========DRAW DESTINATION SQUARES=================
+  
   for (int i=trialIndex; i<trialCount; i++) // reduces over time
   {
     pushMatrix();
@@ -134,10 +139,7 @@ void draw() {
     rect(0, 0, d.z, d.z);
     popMatrix();
   }
-
-  //===========DRAW LOGO SQUARE=================
   drawIndicatorCorners();
-  drawIndicator();
 
   //===========DRAW EXAMPLE CONTROLS=================
   fill(255);
@@ -201,7 +203,7 @@ void drawIndicatorCorners(){
   popMatrix();
 }
 
-void gooderLogic() {
+void gooderLogic() {  
   
   // If we're drawing points/lines
   if (clickIndex < 2) {
@@ -289,19 +291,47 @@ void drawIndicator() {
   
   switch (clickIndex) {
     // After one click draw a line from the first point to mx/my
+    case 0: {
+      fill(0,0,255,50);
+      strokeWeight(0);
+      pushMatrix();
+      translate(width/2, height/2); //center the drawing coordinates to the center of the screen
+      translate(mx, my);
+      rotate(radians(logoRotation));
+      noStroke();
+      rect(0, 0, logoZ, logoZ);
+      popMatrix();
+      // Rest square collapse animation
+      collapseSquareFrames = 0;
+      break;
+    }
     case 1: {
-      // Get the point that we clicked
-      int i = 0;
-      float clickX = points[i][0];
-      float clickY = points[i][1];
-      //fill(255,0,255);
-      //ellipse(clickX + width/2, clickY+height/2, 10, 10);
-      // Draw a line from the point we clicked to the cursor
-      strokeWeight(3);
-      stroke(0,50,230);
-      line(clickX+width/2,clickY+height/2, mouseX,mouseY);
-      // Reset lineToSquare animation
-      lineToSquareFrames = 0;
+      if (collapseSquareFrames < collapseSquareMaxFrames - 1) {
+        float collapseFactor = (collapseSquareFrames/collapseSquareMaxFrames);
+        fill(0,0,255,50);
+        strokeWeight(0);
+        pushMatrix();
+        translate(width/2, height/2); //center the drawing coordinates to the center of the screen
+        translate(mx, my);
+        rotate(radians(logoRotation));
+        noStroke();
+        rect(0, 0, logoZ - logoZ*collapseFactor, logoZ - logoZ*collapseFactor);
+        popMatrix();
+        collapseSquareFrames++;
+      } else {
+        // Get the point that we clicked
+        int i = 0;
+        float clickX = points[i][0];
+        float clickY = points[i][1];
+        //fill(255,0,255);
+        //ellipse(clickX + width/2, clickY+height/2, 10, 10);
+        // Draw a line from the point we clicked to the cursor
+        strokeWeight(3);
+        stroke(0,50,230);
+        line(clickX+width/2,clickY+height/2, mouseX,mouseY);
+        // Reset lineToSquare animation
+        lineToSquareFrames = 0;
+      }
       break;
     }
     // If we've clicked twice draw a moving square
@@ -319,7 +349,8 @@ void drawIndicator() {
       
       // If we just switched sides reset the animation
       if ((dPrev > 0 && d <= 0) || (dPrev <= 0 && d > 0)) {
-        lineToSquareFrames = 0;
+        //lineToSquareFrames = 0;
+        lineToSquareFrames = -lineToSquareFrames;
       }
       
       // Incremement but constrain the drawFactor
@@ -401,8 +432,6 @@ void drawIndicator() {
       noStroke();
       rect(0, 0, logoZ, logoZ);
       popMatrix();
-      //boolean inside = containsWrapper(points, mouseX - width/2, mouseY - height/2);
-      //println("inside = ", inside);
       break;
     }
 
@@ -531,7 +560,6 @@ float inchToPix(float inch)
 
 // Bounds checking for rect accept/reject
 
-// Taken from stack overflow https://stackoverflow.com/questions/8721406/how-to-determine-if-a-point-is-inside-a-2d-convex-polygon
 
 class Point  
 { 
@@ -545,6 +573,7 @@ class Point
     } 
 }; 
 
+// Taken from stack overflow https://stackoverflow.com/questions/8721406/how-to-determine-if-a-point-is-inside-a-2d-convex-polygon
 boolean contains(Point polygon[], Point test) {
   int i;
   int j;
